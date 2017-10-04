@@ -22,7 +22,8 @@ let db_params = {
 	collection: "user",
 	limit: 10,
 	fields: ["username","email"],
-	exclude_fields: ["_id"].sort:{
+	exclude_fields: ["_id"],
+	sort:{
 		field: "_id",
 		order: "asc"
 	}
