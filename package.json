@@ -1,6 +1,6 @@
 {
   "name": "veden-mongodb",
-  "version": "1.0.14",
+  "version": "1.0.15",
   "description": "MongoDB Client wrapper",
   "main": "lib/index.js",
   "scripts": {
