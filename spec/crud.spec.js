@@ -105,5 +105,22 @@ describe("Test CRUD Functions", () => {
 		expect(result.deleted > 1).toBeTruthy();
 	});
 
+	it("should replaceOne document", async () => {
+		let doc = {
+			name: 'Jasmine Replace One',
+			email: "jasmine@replaceone.ca",
+			number : 2
+		};
+		let doc2 = {
+			name: 'Jasmine Replaced One',
+			email: "jasmine@replacedone.ca",
+		};
+		let insert_result = await db.insertOne(Object.assign({},db_params),doc);
+		let replace_result = await db.replaceOne(Object.assign({},db_params),{_id:insert_result._id},doc2);
+		let result = await db.findOne(Object.assign({},db_params),{_id:insert_result._id});
+		expect(result.name).toBe(doc2.name);
+		expect(result.number).toBe(undefined);
+	});
+
 
 });

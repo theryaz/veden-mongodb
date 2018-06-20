@@ -78,6 +78,15 @@ Returns
 - \_ids: Array of ObjectIds of inserted documents
 - result: Raw Response from database (varies by mongo version)
 
+#### replaceOne()
+
+Returns
+- matched: Number of matched documents
+- modified: Number of modified documents
+- upserted: Number of upserted documents
+- upserted_id: Id of created document if upserted
+- result: Raw Response from database (varies by mongo version)
+
 #### upsertOne()
 
 Returns
