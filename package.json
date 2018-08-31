@@ -1,6 +1,6 @@
 {
   "name": "veden-mongodb",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "MongoDB Client wrapper",
   "main": "lib/index.js",
   "scripts": {
@@ -9,7 +9,7 @@
   "author": "Ryan Lawson",
   "license": "ISC",
   "dependencies": {
-    "mongodb": "^3.0.10"
+    "mongodb": "^3.1.4"
   },
   "devDependencies": {
     "jasmine": "^3.1.0"

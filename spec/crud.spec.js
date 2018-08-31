@@ -17,6 +17,88 @@ describe("Test CRUD Functions", () => {
 		done();
 	});
 
+	it("Should run a transaction and abort", async () => {
+		let docs = await db.find(Object.assign({},db_params));
+		console.log("Pre Transaction Docs",docs);
+
+		let client_session = await db.getClientSession(db_params.database);
+		await client_session.startTransaction();
+		console.log("client_session.inTransaction()",client_session.inTransaction());
+		await db.insertOne(Object.assign({session:client_session},db_params),{
+			name: 'Jasmine Transaction Abort',
+			email: 'jasmine@gmail.com',
+			salary: ~~(Math.random() * 1000000) / 100,
+			created: new Date('2017-11-27')
+		});
+		await db.insertOne(Object.assign({session:client_session},db_params),{
+			name: 'Jasmine Transaction Abort',
+			email: 'jasmine@gmail.com',
+			salary: ~~(Math.random() * 1000000) / 100,
+			created: new Date('2017-11-27')
+		});
+		await db.insertOne(Object.assign({session:client_session},db_params),{
+			name: 'Jasmine Transaction Abort',
+			email: 'jasmine@gmail.com',
+			salary: ~~(Math.random() * 1000000) / 100,
+			created: new Date('2017-11-27')
+		});
+		let transaction_docs = await db.find(Object.assign({session:client_session},db_params));
+		console.log("Pre Abort Transaction Docs",transaction_docs);
+		expect(transaction_docs.length).toBe(3);
+		expect(client_session.inTransaction()).toBe(true);
+
+		await client_session.abortTransaction();
+		await client_session.endSession();
+
+		let post_docs = await db.find(Object.assign({},db_params));
+		console.log("Post Transaction Docs",post_docs);
+		expect(post_docs.length).toBe(0);
+	});
+
+	it("Should run a transaction and commit", async () => {
+		let docs = await db.find(Object.assign({},db_params));
+
+		let client_session = await db.getClientSession(db_params.database);
+		await client_session.startTransaction();
+		await db.insertOne(Object.assign({session:client_session},db_params),{
+			name: 'Jasmine Transaction Commit',
+			email: 'jasmine@gmail.com',
+			salary: ~~(Math.random() * 1000000) / 100,
+			created: new Date('2017-11-27')
+		});
+		await db.insertOne(Object.assign({session:client_session},db_params),{
+			name: 'Jasmine Transaction Commit',
+			email: 'jasmine@gmail.com',
+			salary: ~~(Math.random() * 1000000) / 100,
+			created: new Date('2017-11-27')
+		});
+		await db.insertOne(Object.assign({session:client_session},db_params),{
+			name: 'Jasmine Transaction Commit',
+			email: 'jasmine@gmail.com',
+			salary: ~~(Math.random() * 1000000) / 100,
+			created: new Date('2017-11-27')
+		});
+		let transaction_docs = await db.find(Object.assign({session:client_session},db_params));
+		expect(transaction_docs.length).toBe(3);
+		await client_session.commitTransaction();
+		await client_session.endSession();
+
+		let post_docs = await db.find(Object.assign({},db_params));
+		expect(post_docs.length).toBe(3);
+		await db.deleteMany(Object.assign({},db_params),{_id:{$in:post_docs.map(x => x._id)}});
+	});
+
+	it("Should fail to start 2 transactions", async () => {
+		let docs = await db.find(Object.assign({},db_params));
+		console.log("Pre Transaction Docs",docs);
+
+		let client_session = await db.getClientSession(db_params.database);
+		await client_session.startTransaction();
+		// MongoError: Transaction already in progress
+		expect(client_session.startTransaction).toThrow();
+
+	});
+
 	it("should insertOne document", async () => {
 		let result = await db.insertOne(Object.assign({},db_params),{
 			name: 'Jasmine',
