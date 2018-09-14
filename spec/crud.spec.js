@@ -24,6 +24,7 @@ describe("Test CRUD Functions", () => {
 		let transaction_result
 		try{
 			transaction_result = await db.runTransaction({
+				debug:true,
 				database:db_params.database,
 				collection: db_params.collection
 			},async (transaction_params) => {
