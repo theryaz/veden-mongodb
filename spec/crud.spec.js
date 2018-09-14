@@ -7,7 +7,7 @@ describe("Test CRUD Functions", () => {
 		DB_REPLICA_SET : process.env.DB_REPLICA_SET
 	};
 	const db_params = { database: 'jasmine_testing', collection: 'test', debug: true};
-	console.log('Using Options for DB',options,"\n",db_params,"\n");
+	// console.log('Using Options for DB',options,"\n",db_params,"\n");
 	beforeAll(() => {
 		db = new MongoDatabase(options);
 	});
@@ -19,84 +19,77 @@ describe("Test CRUD Functions", () => {
 
 	it("Should run a transaction and abort", async () => {
 		let docs = await db.find(Object.assign({},db_params));
-		console.log("Pre Transaction Docs",docs);
+		// console.log("Pre Transaction Docs",docs);
 
-		let client_session = await db.getClientSession(db_params.database);
-		await client_session.startTransaction();
-		console.log("client_session.inTransaction()",client_session.inTransaction());
-		await db.insertOne(Object.assign({session:client_session},db_params),{
-			name: 'Jasmine Transaction Abort',
-			email: 'jasmine@gmail.com',
-			salary: ~~(Math.random() * 1000000) / 100,
-			created: new Date('2017-11-27')
-		});
-		await db.insertOne(Object.assign({session:client_session},db_params),{
-			name: 'Jasmine Transaction Abort',
-			email: 'jasmine@gmail.com',
-			salary: ~~(Math.random() * 1000000) / 100,
-			created: new Date('2017-11-27')
-		});
-		await db.insertOne(Object.assign({session:client_session},db_params),{
-			name: 'Jasmine Transaction Abort',
-			email: 'jasmine@gmail.com',
-			salary: ~~(Math.random() * 1000000) / 100,
-			created: new Date('2017-11-27')
-		});
-		let transaction_docs = await db.find(Object.assign({session:client_session},db_params));
-		console.log("Pre Abort Transaction Docs",transaction_docs);
-		expect(transaction_docs.length).toBe(3);
-		expect(client_session.inTransaction()).toBe(true);
-
-		await client_session.abortTransaction();
-		await client_session.endSession();
+		let transaction_result
+		try{
+			transaction_result = await db.runTransaction({
+				database:db_params.database,
+				collection: db_params.collection
+			},async (transaction_params) => {
+				await db.insertOne(transaction_params,{
+					name: 'Jasmine Transaction Abort',
+					email: 'jasmine@gmail.com',
+					salary: ~~(Math.random() * 1000000) / 100,
+					created: new Date('2017-11-27')
+				});
+				await db.insertOne(transaction_params,{
+					name: 'Jasmine Transaction Abort',
+					email: 'jasmine@gmail.com',
+					salary: ~~(Math.random() * 1000000) / 100,
+					created: new Date('2017-11-27')
+				});
+				await db.insertOne(transaction_params,{
+					name: 'Jasmine Transaction Abort',
+					email: 'jasmine@gmail.com',
+					salary: ~~(Math.random() * 1000000) / 100,
+					created: new Date('2017-11-27')
+				});
+				let transaction_docs = await db.find(transaction_params);
+				// console.log("Pre Abort Transaction Docs",transaction_docs);
+				expect(transaction_docs.length).toBe(3);
+				throw new Error("Transaction Should Abort");
+			});
+		}catch(e){
+			// console.log("Transaction Aborted",e);
+		}
 
 		let post_docs = await db.find(Object.assign({},db_params));
-		console.log("Post Transaction Docs",post_docs);
+		// console.log("Post Transaction Docs",post_docs);
 		expect(post_docs.length).toBe(0);
 	});
 
 	it("Should run a transaction and commit", async () => {
-		let docs = await db.find(Object.assign({},db_params));
 
-		let client_session = await db.getClientSession(db_params.database);
-		await client_session.startTransaction();
-		await db.insertOne(Object.assign({session:client_session},db_params),{
-			name: 'Jasmine Transaction Commit',
-			email: 'jasmine@gmail.com',
-			salary: ~~(Math.random() * 1000000) / 100,
-			created: new Date('2017-11-27')
+		let transaction_result = await db.runTransaction({
+			database:db_params.database,
+			collection: db_params.collection
+		},async (transaction_params) => {
+			await db.insertOne(transaction_params,{
+				name: 'Jasmine Transaction Commit',
+				email: 'jasmine@gmail.com',
+				salary: ~~(Math.random() * 1000000) / 100,
+				created: new Date('2017-11-27')
+			});
+			await db.insertOne(transaction_params,{
+				name: 'Jasmine Transaction Commit',
+				email: 'jasmine@gmail.com',
+				salary: ~~(Math.random() * 1000000) / 100,
+				created: new Date('2017-11-27')
+			});
+			await db.insertOne(transaction_params,{
+				name: 'Jasmine Transaction Commit',
+				email: 'jasmine@gmail.com',
+				salary: ~~(Math.random() * 1000000) / 100,
+				created: new Date('2017-11-27')
+			});
+			let transaction_docs = await db.find(transaction_params);
+			expect(transaction_docs.length).toBe(3);
 		});
-		await db.insertOne(Object.assign({session:client_session},db_params),{
-			name: 'Jasmine Transaction Commit',
-			email: 'jasmine@gmail.com',
-			salary: ~~(Math.random() * 1000000) / 100,
-			created: new Date('2017-11-27')
-		});
-		await db.insertOne(Object.assign({session:client_session},db_params),{
-			name: 'Jasmine Transaction Commit',
-			email: 'jasmine@gmail.com',
-			salary: ~~(Math.random() * 1000000) / 100,
-			created: new Date('2017-11-27')
-		});
-		let transaction_docs = await db.find(Object.assign({session:client_session},db_params));
-		expect(transaction_docs.length).toBe(3);
-		await client_session.commitTransaction();
-		await client_session.endSession();
 
 		let post_docs = await db.find(Object.assign({},db_params));
 		expect(post_docs.length).toBe(3);
 		await db.deleteMany(Object.assign({},db_params),{_id:{$in:post_docs.map(x => x._id)}});
-	});
-
-	it("Should fail to start 2 transactions", async () => {
-		let docs = await db.find(Object.assign({},db_params));
-		console.log("Pre Transaction Docs",docs);
-
-		let client_session = await db.getClientSession(db_params.database);
-		await client_session.startTransaction();
-		// MongoError: Transaction already in progress
-		expect(client_session.startTransaction).toThrow();
-
 	});
 
 	it("should insertOne document", async () => {
@@ -108,7 +101,7 @@ describe("Test CRUD Functions", () => {
 		});
 		expect(result._id).toBeTruthy();
 	});
-
+	//
 	it("should insertMany documents", async () => {
 		let result = await db.insertMany(Object.assign({},db_params),[
 			{
