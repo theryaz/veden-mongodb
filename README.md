@@ -125,3 +125,43 @@ Allows you to use mongodb's aggregation pipeline
 
 ```javascript
 db.aggregate(db_params,[ ... aggregations ]).then(result => { ... })```
+
+#### startTransaction(opts,callback) => Promise
+
+Starts a new ClientSession, begins a transaction and provides the required db_params in a callback. The transaction is commited when the callback resolves, and aborted if it throws an error.
+
+opts
+- `retries` default: 3 - Number of Retries before throwing error
+- `delay` default: 1000 - Delay in ms before retrying
+- `database` default: none - Default DB to provide in params
+- `collection` default: none - Default collection to provide in params
+- `retry_error_codes` default: [251,112] - Error codes to retry on
+
+callback
+- Recieves params object which can be passed to other db methods
+- Must return a Promise (async / await does this automatically)
+- Result will be resolved by the runTransaction function when the transaction finishes
+- `params`:
+  - `session` - always present, ClientSession with running transaction, pass into db_params for operation to be within the session
+  - `database` - present if provided in opts
+  - `collection` - present if provided in opts
+```javascript
+db.runTransaction({database: 'db1'},(params) => {
+	return Promise.all([
+		db.updateOne(
+			{database: params.database, collection: 'collection1', session: params.session},
+			{},
+			{closed: true}
+		),
+		db.updateMany(
+			{database: params.database, collection: 'collection2', session: params.session, overwrite: true},
+			{name:"update doc"},
+			{$push:{_ids: "update"}}
+		)
+	]);
+}).then(([result1,result2]) => {
+	// Transaction successful
+}).catch(e => {
+	// Transaction Failed
+})
+```
