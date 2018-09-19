@@ -6,7 +6,7 @@ This package is a wrapper for the mongodb nodejs client
 
 ### Usage
 
-```javascript
+```
 const MongoDatabase = require('veden-mongodb').MongoDatabase;
 const db = new MongoDatabase({
 	DB_HOSTS : "localhost",
@@ -123,8 +123,10 @@ Returns
 
 Allows you to use mongodb's aggregation pipeline
 
-```javascript
-db.aggregate(db_params,[ ... aggregations ]).then(result => { ... })```
+```
+db.aggregate(db_params,[ ... aggregations ]).then(result => { ... })
+
+```
 
 #### startTransaction(opts,callback) => Promise
 
@@ -145,7 +147,8 @@ callback
   - `session` - always present, ClientSession with running transaction, pass into db_params for operation to be within the session
   - `database` - present if provided in opts
   - `collection` - present if provided in opts
-```javascript
+
+```
 db.runTransaction({database: 'db1'},(params) => {
 	return Promise.all([
 		db.updateOne(
