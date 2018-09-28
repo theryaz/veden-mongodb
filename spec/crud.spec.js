@@ -17,6 +17,26 @@ describe("Test CRUD Functions", () => {
 		done();
 	});
 
+	it("Should run set db and collection in transaction", async () => {
+		transaction_result = await db.runTransaction({
+			debug:true,
+			database:db_params.database,
+			collection: db_params.collection
+		},async (transaction_params) => {
+			expect(transaction_params.database).toBe(db_params.database);
+			expect(transaction_params.collection).toBe(db_params.collection);
+		});
+	});
+	it("Should not set the database by default", async () => {
+		transaction_result = await db.runTransaction({
+			debug:true,
+			collection: db_params.collection
+		},async (transaction_params) => {
+			expect(transaction_params.hasOwnProperty('database')).toBe(false);
+			expect(transaction_params.collection).toBe(db_params.collection);
+		});
+	});
+
 	it("Should run a transaction and abort", async () => {
 		let docs = await db.find(Object.assign({},db_params));
 		// console.log("Pre Transaction Docs",docs);
@@ -156,6 +176,11 @@ describe("Test CRUD Functions", () => {
 
 	it("should find 3 documents", async () => {
 		let result = await db.find(Object.assign({},db_params),{});
+		expect(result.length).toBe(3);
+	});
+
+	it("should aggregate 3 documents", async () => {
+		let result = await db.aggregate(Object.assign({},db_params),[{$match:{}}]);
 		expect(result.length).toBe(3);
 	});
 
