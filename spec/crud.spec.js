@@ -1,10 +1,7 @@
 describe("Test CRUD Functions", () => {
 	const MongoDatabase = require('../lib/index.js').MongoDatabase;
 	const options = {
-		DB_HOSTS: process.env.DB_HOSTS || 'localhost',
-		DB_USER: process.env.DB_USER || 'root',
-		DB_PASS: process.env.DB_PASS || 'changeme',
-		DB_REPLICA_SET : process.env.DB_REPLICA_SET
+		DB_HOSTS: 'mongo:27017',
 	};
 	const db_params = { database: 'jasmine_testing', collection: 'test', debug: true};
 	// console.log('Using Options for DB',options,"\n",db_params,"\n");
@@ -78,39 +75,6 @@ describe("Test CRUD Functions", () => {
 		let post_docs = await db.find(Object.assign({},db_params));
 		// console.log("Post Transaction Docs",post_docs);
 		expect(post_docs.length).toBe(0);
-	});
-
-	it("Should run a transaction and commit", async () => {
-
-		let transaction_result = await db.runTransaction({
-			database:db_params.database,
-			collection: db_params.collection
-		},async (transaction_params) => {
-			await db.insertOne(transaction_params,{
-				name: 'Jasmine Transaction Commit',
-				email: 'jasmine@gmail.com',
-				salary: ~~(Math.random() * 1000000) / 100,
-				created: new Date('2017-11-27')
-			});
-			await db.insertOne(transaction_params,{
-				name: 'Jasmine Transaction Commit',
-				email: 'jasmine@gmail.com',
-				salary: ~~(Math.random() * 1000000) / 100,
-				created: new Date('2017-11-27')
-			});
-			await db.insertOne(transaction_params,{
-				name: 'Jasmine Transaction Commit',
-				email: 'jasmine@gmail.com',
-				salary: ~~(Math.random() * 1000000) / 100,
-				created: new Date('2017-11-27')
-			});
-			let transaction_docs = await db.find(transaction_params);
-			expect(transaction_docs.length).toBe(3);
-		});
-
-		let post_docs = await db.find(Object.assign({},db_params));
-		expect(post_docs.length).toBe(3);
-		await db.deleteMany(Object.assign({},db_params),{_id:{$in:post_docs.map(x => x._id)}});
 	});
 
 	it("should insertOne document", async () => {
@@ -222,6 +186,51 @@ describe("Test CRUD Functions", () => {
 		expect(result.name).toBe(doc2.name);
 		expect(result.number).toBe(undefined);
 	});
+
+	it("should findOneAndUpdate document", async () => {
+		let doc = {
+			name: 'Jasmine findOneAndUpdate',
+			email: "jasmine@finandupdate.ca",
+		};
+		let update = {
+			name: 'Jasmine findOneAndUpdate Updated',
+			email: "jasmine@finandupdate.ca",
+		};
+		let insert_result = await db.insertOne(Object.assign({},db_params),doc);
+		let update_result = await db.findOneAndUpdate(Object.assign({},db_params),{_id:insert_result._id},update);
+		let updated_document = await db.findOne(Object.assign({},db_params),{_id: insert_result._id});
+		expect(update_result.value.name).toBe(doc.name);
+		expect(updated_document.name).toBe(update.name);
+	});
+
+	it("should findOneAndReplace document", async () => {
+		let doc = {
+			name: 'Jasmine findOneAndReplace',
+			email: "jasmine@finandupdate.ca",
+		};
+		let doc2 = {
+			name: 'Jasmine findOneAndReplace Replaced',
+			email: "jasmine@findonereplacedone.ca",
+		};
+		let insert_result = await db.insertOne(Object.assign({},db_params),doc);
+		let replace_result = await db.findOneAndReplace(Object.assign({},db_params),{_id:insert_result._id},doc2);
+		let replaced_document = await db.findOne(Object.assign({},db_params),{_id: insert_result._id});
+		expect(replace_result.value.name).toBe(doc.name);
+		expect(replaced_document.name).toBe(doc2.name);
+	});
+
+	it("should findOneAndDelete document", async () => {
+		let doc = {
+			name: 'Jasmine findOneAndDelete',
+			email: "jasmine@finanddelete.ca",
+		};
+		let insert_result = await db.insertOne(Object.assign({},db_params),doc);
+		let delete_result = await db.findOneAndDelete(Object.assign({},db_params),{_id:insert_result._id});
+		let deleted_doc = await db.findOne(Object.assign({},db_params),{_id:insert_result._id});
+		expect(delete_result.value.name).toBe(doc.name);
+		expect(deleted_doc).toBe(null);
+	});
+
 
 
 });
